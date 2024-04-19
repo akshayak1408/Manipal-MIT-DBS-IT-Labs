@@ -1,0 +1,100 @@
+-- Create PERSON_090 table
+CREATE TABLE PERSON_090 (
+    driver_id# VARCHAR(30) PRIMARY KEY,
+    name VARCHAR(50),
+    Address VARCHAR(100)
+);
+
+-- Create CAR_090 table
+CREATE TABLE CAR_090 (
+    regno VARCHAR(20) PRIMARY KEY,
+    model VARCHAR(30),
+    Year INT
+);
+
+-- Create ACCIDENT_090 table
+CREATE TABLE ACCIDENT_090 (
+    report_number INT PRIMARY KEY,
+    accd_date DATE,
+    location VARCHAR(50)
+);
+
+-- Create OWNS_090 table with foreign keys
+CREATE TABLE OWNS_090 (
+    driver_id# VARCHAR(30),
+    regno VARCHAR(20),
+    PRIMARY KEY (driver_id#, regno),
+    FOREIGN KEY (driver_id#) REFERENCES PERSON_090(driver_id#),
+    FOREIGN KEY (regno) REFERENCES CAR_090(regno)
+);
+
+-- Create PARTICIPATED_090 table with foreign keys
+CREATE TABLE PARTICIPATED_090 (
+    driver_id# VARCHAR(30),
+    regno VARCHAR(20),
+    report_number INT,
+    damage_amount INT,
+    PRIMARY KEY (driver_id#, regno, report_number),
+    FOREIGN KEY (driver_id#) REFERENCES PERSON_090(driver_id#),
+    FOREIGN KEY (regno) REFERENCES CAR_090(regno),
+    FOREIGN KEY (report_number) REFERENCES ACCIDENT_090(report_number)
+);
+
+
+
+
+
+
+-- Insert data into PERSON_090 table
+INSERT INTO PERSON_090 VALUES ('D1', 'John Doe', '123 Main St');
+INSERT INTO PERSON_090 VALUES ('D2', 'Jane Smith', '456 Oak Ave');
+-- Add more records as needed
+
+-- Insert data into CAR_090 table
+INSERT INTO CAR_090 VALUES ('R1', 'Toyota Camry', 2020);
+INSERT INTO CAR_090 VALUES ('R2', 'Honda Civic', 2019);
+-- Add more records as needed
+
+-- Insert data into ACCIDENT_090 table
+INSERT INTO ACCIDENT_090 VALUES (1, TO_DATE('15-Sep-2022', 'dd-mon-yyyy'), 'Intersection A');
+INSERT INTO ACCIDENT_090 VALUES (2, TO_DATE('22-Jul-2023', 'dd-mon-yyyy'), 'Highway B');
+-- Add more records as needed
+
+-- Insert data into OWNS_090 table
+INSERT INTO OWNS_090 VALUES ('D1', 'R1');
+INSERT INTO OWNS_090 VALUES ('D2', 'R2');
+-- Add more records as needed
+
+-- Insert data into PARTICIPATED_090 table
+INSERT INTO PARTICIPATED_090 VALUES ('D1', 'R1', 1, 5000);
+INSERT INTO PARTICIPATED_090 VALUES ('D2', 'R2', 2, 7500);
+-- Add more records as needed
+
+
+UPDATE PARTICIPATED_090
+SET damage_amount = 25000
+WHERE regno = 'R1' AND report_number = 12;
+
+
+
+DELETE FROM ACCIDENT_090
+WHERE EXTRACT(YEAR FROM accd_date) = 2022;
+
+
+
+
+-- Add a new attribute to the PERSON_090 table
+ALTER TABLE PERSON_090
+ADD email VARCHAR(100);
+
+
+
+-- Delete the 'Address' attribute from the PERSON_090 table
+ALTER TABLE PERSON_090
+DROP COLUMN Address;
+
+
+
+-- Add a check constraint to the PARTICIPATED_090 table
+ALTER TABLE PARTICIPATED_090
+ADD CONSTRAINT chk_damage_amount CHECK (damage_amount >= 0);

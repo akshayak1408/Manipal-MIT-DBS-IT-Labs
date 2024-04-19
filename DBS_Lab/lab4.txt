@@ -1,0 +1,44 @@
+ SELECT COUNT(DISTINCT owner.driver_id#) AS TotalPeople
+FROM
+    (SELECT DISTINCT o.driver_id#, a.accd_date
+     FROM OWNS_090 o, PARTICIPATED_090 p, ACCIDENT_090 a
+     WHERE o.regno = p.regno AND p.report_number = a.report_number
+     AND EXTRACT(YEAR FROM a.accd_date) = 2008) owner;
+
+
+
+
+SELECT model,
+       (SELECT COUNT(*) FROM PARTICIPATED_090 WHERE regno = 'YourModelRegNo') AS NumberOfACCIDENT_090s
+FROM CAR_090
+WHERE regno = 'YourModelRegNo';
+
+
+
+
+SELECT p.name AS OWNER_NAME,
+       COUNT(DISTINCT p.driver_id#) AS "No. of ACCIDENT_090s",
+       SUM(damage_amount) AS "Total Damage Amount"
+FROM PERSON_090 p, PARTICIPATED_090 pa
+WHERE p.driver_id# = pa.driver_id#
+GROUP BY p.name
+ORDER BY "Total Damage Amount" DESC;
+
+
+
+
+
+SELECT p.name AS OWNER_NAME,
+       EXTRACT(YEAR FROM a.accd_date) AS ACCIDENT_090Year,
+       COUNT(DISTINCT a.report_number) AS "No. of ACCIDENT_090s in Year"
+FROM PERSON_090 p, PARTICIPATED_090 pa, ACCIDENT_090 a
+WHERE p.driver_id# = pa.driver_id# AND pa.report_number = a.report_number
+GROUP BY p.name, EXTRACT(YEAR FROM a.accd_date)
+HAVING COUNT(DISTINCT a.report_number) > 2;
+
+
+
+
+SELECT p.name AS OWNER_NAME
+FROM PERSON_090 p
+WHERE p.driver_id# NOT IN (SELECT DISTINCT driver_id# FROM PARTICIPATED_090);

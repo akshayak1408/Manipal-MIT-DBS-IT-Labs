@@ -1,0 +1,253 @@
+-- Create STUDENT_090 table
+CREATE TABLE STUDENT_090 (
+    regno VARCHAR(20) PRIMARY KEY,
+    name VARCHAR(50),
+    major VARCHAR(20),
+    bdate DATE
+);
+
+-- Create COURSE_090 table
+CREATE TABLE COURSE_090 (
+    COURSE_090# INT PRIMARY KEY,
+    cname VARCHAR(30),
+    dept VARCHAR(30)
+);
+
+-- Create ENROLL_090 table with foreign keys
+CREATE TABLE ENROLL_090 (
+    regno VARCHAR(20),
+    COURSE_090# INT,
+    PRIMARY KEY (regno, COURSE_090#),
+    FOREIGN KEY (regno) REFERENCES STUDENT_090(regno),
+    FOREIGN KEY (COURSE_090#) REFERENCES COURSE_090(COURSE_090#)
+);
+
+-- Create BOOK_ADOPTION_090 table with foreign keys
+CREATE TABLE BOOK_ADOPTION_090 (
+    COURSE_090# INT,
+    sem INT,
+    book_isbn INT,
+    PRIMARY KEY (COURSE_090#, sem, book_isbn),
+    FOREIGN KEY (COURSE_090#) REFERENCES COURSE_090(COURSE_090#)
+);
+
+-- Create TEXT_090 table
+CREATE TABLE TEXT_090 (
+    book_isbn INT PRIMARY KEY,
+    booktitle VARCHAR(50),
+    publisher VARCHAR(50),
+    author VARCHAR(50)
+);
+
+-- Insert at least five tuples for each relation (Sample data)
+-- Insert data into STUDENT_090 table
+INSERT INTO STUDENT_090 VALUES ('S1', 'John Smith', 'Computer Science', TO_DATE('1998-05-10', 'YYYY-MM-DD'));
+INSERT INTO STUDENT_090 VALUES ('S2', 'Jane Doe', 'Mathematics', TO_DATE('1999-02-15', 'YYYY-MM-DD'));
+-- Add more records as needed
+
+-- Insert data into COURSE_090 table
+INSERT INTO COURSE_090 VALUES (101, 'Introduction to Computer Science', 'CS');
+INSERT INTO COURSE_090 VALUES (102, 'Calculus I', 'Math');
+-- Add more records as needed
+
+-- Insert data into ENROLL_090 table
+INSERT INTO ENROLL_090 VALUES ('S1', 101);
+INSERT INTO ENROLL_090 VALUES ('S1', 102);
+-- Add more records as needed
+
+-- Insert data into BOOK_ADOPTION_090 table
+INSERT INTO BOOK_ADOPTION_090 VALUES (101, 1, 12345);
+INSERT INTO BOOK_ADOPTION_090 VALUES (102, 1, 54321);
+-- Add more records as needed
+
+-- Insert data into TEXT_090 table
+INSERT INTO TEXT_090 VALUES (12345, 'Computer Science Basics', 'Tech Publications', 'Alice Johnson');
+INSERT INTO TEXT_090 VALUES (54321, 'Calculus for Beginners', 'MathBooks Inc.', 'Bob Smith');
+-- Add more records as needed
+
+
+
+
+
+
+
+SELECT cname
+FROM COURSE_090
+WHERE COURSE_090# IN (
+    SELECT COURSE_090#
+    FROM BOOK_ADOPTION_090
+    GROUP BY COURSE_090#
+    HAVING COUNT(book_isbn) > 1
+);
+
+
+
+
+
+
+
+SELECT dept
+FROM COURSE_090
+GROUP BY dept
+HAVING COUNT(*) = (
+    SELECT COUNT(DISTINCT b.publisher)
+    FROM BOOK_ADOPTION_090 ba
+    JOIN TEXT_090 b ON ba.book_isbn = b.book_isbn
+    WHERE ba.COURSE_090# IN (
+        SELECT COURSE_090#
+        FROM COURSE_090
+        WHERE dept = COURSE_090.dept
+    )
+    AND b.publisher = 'SpecificPublisher'
+);
+
+
+
+
+SELECT DISTINCT s.regno, s.name
+FROM STUDENT_090 s
+WHERE s.regno IN (
+    SELECT regno
+    FROM ENROLL_090 e
+    JOIN COURSE_090 c ON e.COURSE_090# = c.COURSE_090#
+    GROUP BY regno
+    HAVING COUNT(DISTINCT c.dept) > 1
+);
+
+
+
+
+
+
+
+SELECT regno, name
+FROM STUDENT_090
+WHERE regno NOT IN (
+    SELECT DISTINCT regno
+    FROM ENROLL_090
+);
+
+
+
+
+
+
+SELECT t.booktitle, t.publisher
+FROM TEXT_090 t
+WHERE t.book_isbn IN (
+    SELECT ba.book_isbn
+    FROM BOOK_ADOPTION_090 ba
+    WHERE ba.COURSE_090# = 101
+)
+AND t.book_isbn IN (
+    SELECT t2.book_isbn
+    FROM ENROLL_090 e
+    JOIN COURSE_090 c ON e.COURSE_090# = c.COURSE_090#
+    JOIN BOOK_ADOPTION_090 ba2 ON c.COURSE_090# = ba2.COURSE_090#
+    JOIN TEXT_090 t2 ON ba2.book_isbn = t2.book_isbn
+    WHERE e.regno = 'S1'
+);
+
+
+
+
+
+
+
+SELECT c.cname
+FROM COURSE_090 c
+WHERE c.COURSE_090# IN (
+    SELECT ba.COURSE_090#
+    FROM BOOK_ADOPTION_090 ba
+    JOIN TEXT_090 t ON ba.book_isbn = t.book_isbn
+    WHERE t.publisher = 'SpecificPublisher'
+    GROUP BY ba.COURSE_090#
+    HAVING COUNT(DISTINCT t.publisher) >= 2
+);
+
+
+
+
+
+
+
+
+SELECT s.regno, s.name
+FROM STUDENT_090 s
+WHERE s.regno IN (
+    SELECT regno
+    FROM ENROLL_090 e
+    JOIN BOOK_ADOPTION_090 ba ON e.COURSE_090# = ba.COURSE_090#
+    GROUP BY regno
+    HAVING COUNT(ba.book_isbn) = (
+        SELECT MAX(book_count)
+        FROM (
+            SELECT COUNT(ba.book_isbn) AS book_count
+            FROM ENROLL_090 e
+            JOIN BOOK_ADOPTION_090 ba ON e.COURSE_090# = ba.COURSE_090#
+            GROUP BY regno
+        )
+    )
+);
+
+
+
+
+
+SELECT publisher, COUNT(*) AS "Number of Books Published"
+FROM TEXT_090
+GROUP BY publisher;
+
+
+
+
+
+
+
+SELECT s.regno, s.name
+FROM STUDENT_090 s
+WHERE (
+    SELECT COUNT(DISTINCT e.COURSE_090#)
+    FROM ENROLL_090 e
+    WHERE e.regno = s.regno
+) = (
+    SELECT COUNT(DISTINCT ba.COURSE_090#)
+    FROM BOOK_ADOPTION_090 ba
+    WHERE ba.COURSE_090# IN (
+        SELECT e.COURSE_090#
+        FROM ENROLL_090 e
+        WHERE e.regno = s.regno
+    )
+);
+
+
+
+
+
+
+CREATE VIEW STUDENT_090BookCOURSE_090s AS
+SELECT e.regno, COUNT(DISTINCT ba.COURSE_090#) AS "BookCOURSE_090sCount"
+FROM ENROLL_090 e
+JOIN BOOK_ADOPTION_090 ba ON e.COURSE_090# = ba.COURSE_090#
+GROUP BY e.regno;
+``
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
